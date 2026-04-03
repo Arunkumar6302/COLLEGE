@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Route as MapRoute, Plus, X, MapPin, Navigation, Trash2, ArrowRight } from 'lucide-react';
+import { Route as MapRoute, Plus, X, MapPin, Navigation, Trash2, ArrowRight, Activity, Search } from 'lucide-react';
 
 const RouteManagement = () => {
     const [routes, setRoutes] = useState([]);
     const [isAddingRoute, setIsAddingRoute] = useState(false);
-    const [isAddingStop, setIsAddingStop] = useState(null); // Will hold route ID
+    const [editingRoute, setEditingRoute] = useState(null);
+    const [isAddingStop, setIsAddingStop] = useState(null); 
     const [newRoute, setNewRoute] = useState({ name: '', startName: '', startLat: '', startLng: '', endName: '', endLat: '', endLng: '' });
     const [newStop, setNewStop] = useState({ name: '', latitude: '', longitude: '', order: '' });
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => { fetchRoutes(); }, []);
 
@@ -52,137 +54,212 @@ const RouteManagement = () => {
         } catch (err) { console.error(err); alert('Failed to add stop'); }
     };
 
+    const handleEditRoute = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            const payload = {
+                name: editingRoute.name,
+                startLocation: editingRoute.startLocation,
+                endLocation: editingRoute.endLocation
+            };
+            await axios.put(`${import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`}/api/admin/route/${editingRoute._id}`, payload, { headers: { 'x-auth-token': token } });
+            setEditingRoute(null);
+            fetchRoutes();
+        } catch (err) { 
+            console.error(err); 
+            const errorMsg = err.response?.data?.msg || 'Failed to update route. Database validation error.';
+            alert(errorMsg); 
+        }
+    };
+
+    const handleDeleteRoute = async (id) => {
+        if (!window.confirm("FATAL ACTION: Deleting this route will unassign it from all active buses and purge all associated nodes. Proceed?")) return;
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`${import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`}/api/admin/route/${id}`, { headers: { 'x-auth-token': token } });
+            fetchRoutes();
+        } catch (err) { 
+            console.error(err); 
+            const errorMsg = err.response?.data?.msg || 'Failed to decommission route. Database sync error.';
+            alert(errorMsg); 
+        }
+    };
+
+    const filteredRoutes = routes.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
     return (
-        <div className="space-y-12">
-            <div className="flex justify-between items-center bg-indigo-600/5 p-8 rounded-3xl border border-indigo-500/10 backdrop-blur-sm">
+        <div className="space-y-6">
+            <div className="flex justify-between items-center bg-white p-8 rounded-2xl border border-slate-200 shadow-sm animate-fade-in">
                 <div>
-                   <h3 className="text-3xl font-extrabold flex items-center gap-4">
-                        <MapRoute className="text-indigo-400" size={36} /> Logistics & Routes
+                   <h3 className="text-2xl font-black flex items-center gap-3 text-slate-900">
+                        <MapRoute className="text-orange-600" size={28} /> Transit Logistics
                    </h3>
-                   <p className="text-slate-400 mt-2 font-medium italic">Define your college transit lines and stops</p>
+                   <p className="text-slate-500 text-[11px] font-black mt-1 uppercase tracking-widest leading-none">Map infrastructure & route optimization</p>
                 </div>
-                <button onClick={() => setIsAddingRoute(true)} className="btn-primary flex items-center gap-3 px-8 py-4 shadow-xl">
-                   <Plus size={22} strokeWidth={3} /> Create Route
+                <button onClick={() => setIsAddingRoute(true)} className="bg-orange-600 hover:bg-orange-700 text-white font-black py-2.5 px-6 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-orange-600/20 active:scale-95">
+                   <Plus size={18} /> Design New Route
                 </button>
             </div>
 
             {isAddingRoute && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
-                    <div className="glass w-full max-w-xl p-12 rounded-3xl relative border border-slate-700 shadow-2xl scale-110">
-                        <button onClick={() => setIsAddingRoute(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors"><X size={28} /></button>
-                        <h4 className="text-3xl font-bold mb-8 gradient-text">Configure New Route</h4>
-                        <form onSubmit={handleAddRoute} className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Route Identifier</label>
-                                <input type="text" className="w-full bg-white border border-slate-300 rounded-2xl py-4 px-5 font-bold text-lg text-black placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500" placeholder="e.g. South Campus Line" value={newRoute.name} onChange={(e) => setNewRoute({...newRoute, name: e.target.value})} required />
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in p-6">
+                    <div className="bg-white w-full max-w-xl p-10 rounded-3xl relative border border-slate-200 shadow-2xl overflow-y-auto max-h-[90vh]">
+                        <button onClick={() => setIsAddingRoute(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors"><X size={24} /></button>
+                        <h4 className="text-2xl font-black mb-6 text-slate-800 tracking-tight">Configure Transit Line</h4>
+                        <form onSubmit={handleAddRoute} className="space-y-4">
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block font-sans">Route Moniker</label>
+                                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-4 font-black outline-none focus:border-orange-500 text-slate-800" placeholder="e.g. North Expressway 01" value={newRoute.name} onChange={(e) => setNewRoute({...newRoute, name: e.target.value})} required />
                             </div>
                             
-                            <div className="pt-4 border-t border-slate-800">
-                                <h5 className="text-sm font-bold text-indigo-400 mb-4">Start Location</h5>
-                                <div className="mb-3">
-                                    <input type="text" className="w-full bg-white border border-slate-300 rounded-xl py-3 px-4 text-black font-bold placeholder:text-slate-400" placeholder="Start Point Name (e.g. Main Gate)" value={newRoute.startName} onChange={(e) => setNewRoute({...newRoute, startName: e.target.value})} required />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <input type="number" step="any" className="bg-white border border-slate-300 rounded-xl py-3 px-4 text-black font-bold placeholder:text-slate-400" placeholder="Latitude" value={newRoute.startLat} onChange={(e) => setNewRoute({...newRoute, startLat: e.target.value})} required />
-                                    <input type="number" step="any" className="bg-white border border-slate-300 rounded-xl py-3 px-4 text-black font-bold placeholder:text-slate-400" placeholder="Longitude" value={newRoute.startLng} onChange={(e) => setNewRoute({...newRoute, startLng: e.target.value})} required />
+                            <div className="p-4 border border-slate-200 rounded-2xl bg-slate-50/50">
+                                <h5 className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-3 flex items-center gap-2"><MapPin size={12}/> Origin Terminal</h5>
+                                <input type="text" className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-4 mb-3 text-sm font-bold text-slate-800" placeholder="Location Name" value={newRoute.startName} onChange={(e) => setNewRoute({...newRoute, startName: e.target.value})} required />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input type="number" step="any" className="bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-mono" placeholder="Latitude" value={newRoute.startLat} onChange={(e) => setNewRoute({...newRoute, startLat: e.target.value})} required />
+                                    <input type="number" step="any" className="bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-mono" placeholder="Longitude" value={newRoute.startLng} onChange={(e) => setNewRoute({...newRoute, startLng: e.target.value})} required />
                                 </div>
                             </div>
-                            <div className="border-t border-slate-800 pt-4">
-                                <h5 className="text-sm font-bold text-pink-400 mb-4">End Location</h5>
-                                <div className="mb-3">
-                                    <input type="text" className="w-full bg-white border border-slate-300 rounded-xl py-3 px-4 text-black font-bold placeholder:text-slate-400" placeholder="End Point Name (e.g. Science Block)" value={newRoute.endName} onChange={(e) => setNewRoute({...newRoute, endName: e.target.value})} required />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <input type="number" step="any" className="bg-white border border-slate-300 rounded-xl py-3 px-4 text-black font-bold placeholder:text-slate-400" placeholder="Latitude" value={newRoute.endLat} onChange={(e) => setNewRoute({...newRoute, endLat: e.target.value})} required />
-                                    <input type="number" step="any" className="bg-white border border-slate-300 rounded-xl py-3 px-4 text-black font-bold placeholder:text-slate-400" placeholder="Longitude" value={newRoute.endLng} onChange={(e) => setNewRoute({...newRoute, endLng: e.target.value})} required />
+                            <div className="p-4 border border-slate-200 rounded-2xl bg-slate-50/50">
+                                <h5 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3 flex items-center gap-2"><MapPin size={12}/> Destination Terminal</h5>
+                                <input type="text" className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-4 mb-3 text-sm font-bold text-slate-800" placeholder="Location Name" value={newRoute.endName} onChange={(e) => setNewRoute({...newRoute, endName: e.target.value})} required />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input type="number" step="any" className="bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-mono" placeholder="Latitude" value={newRoute.endLat} onChange={(e) => setNewRoute({...newRoute, endLat: e.target.value})} required />
+                                    <input type="number" step="any" className="bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-mono" placeholder="Longitude" value={newRoute.endLng} onChange={(e) => setNewRoute({...newRoute, endLng: e.target.value})} required />
                                 </div>
                             </div>
 
-                            <button type="submit" className="w-full btn-primary py-5 text-xl font-bold mt-8 shadow-2xl">Confirm Configuration</button>
+                            <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-xl mt-6 shadow-lg shadow-orange-600/20 active:scale-95 transition-all uppercase tracking-widest text-sm">Deploy Transit Matrix</button>
                         </form>
                     </div>
                 </div>
             )}
 
             {isAddingStop && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in relative">
-                    <div className="glass w-full max-w-xl p-12 rounded-3xl relative border border-slate-700 shadow-2xl scale-110">
-                        <button onClick={() => setIsAddingStop(null)} className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors"><X size={28} /></button>
-                        <h4 className="text-3xl font-bold mb-8 gradient-text">Add New Point/Stop</h4>
-                        <form onSubmit={handleAddStop} className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Stop Name</label>
-                                <input type="text" className="w-full bg-white border border-slate-300 rounded-2xl py-4 px-5 font-bold text-lg text-black placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500" placeholder="e.g. City Center Mall" value={newStop.name} onChange={(e) => setNewStop({...newStop, name: e.target.value})} required />
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in p-6">
+                    <div className="bg-white w-full max-w-xl p-10 rounded-3xl relative border border-slate-200 shadow-2xl">
+                        <button onClick={() => setIsAddingStop(null)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors"><X size={24} /></button>
+                        <h4 className="text-2xl font-black mb-6 text-slate-800 tracking-tight">Inject Waypoint</h4>
+                        <form onSubmit={handleAddStop} className="space-y-4">
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Waypoint Descriptor</label>
+                                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-black outline-none focus:border-orange-500 text-slate-800" placeholder="e.g. City Junction" value={newStop.name} onChange={(e) => setNewStop({...newStop, name: e.target.value})} required />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Latitude</label>
-                                    <input type="number" step="any" className="w-full bg-white border border-slate-300 rounded-xl py-3 px-4 text-black font-bold" value={newStop.latitude} onChange={(e) => setNewStop({...newStop, latitude: e.target.value})} required />
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">LAT Coordinate</label>
+                                    <input type="number" step="any" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-mono text-xs" value={newStop.latitude} onChange={(e) => setNewStop({...newStop, latitude: e.target.value})} required />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Longitude</label>
-                                    <input type="number" step="any" className="w-full bg-white border border-slate-300 rounded-xl py-3 px-4 text-black font-bold" value={newStop.longitude} onChange={(e) => setNewStop({...newStop, longitude: e.target.value})} required />
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">LNG Coordinate</label>
+                                    <input type="number" step="any" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-mono text-xs" value={newStop.longitude} onChange={(e) => setNewStop({...newStop, longitude: e.target.value})} required />
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Sequence Order Number</label>
-                                <input type="number" className="w-full bg-white border border-slate-300 rounded-xl py-3 px-4 text-black font-bold placeholder:text-slate-400" placeholder="e.g. 1 (first stop)" value={newStop.order} onChange={(e) => setNewStop({...newStop, order: e.target.value})} required />
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Indexing Order</label>
+                                <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-black" placeholder="Sequence Index (e.g. 1)" value={newStop.order} onChange={(e) => setNewStop({...newStop, order: e.target.value})} required />
                             </div>
-                            <button type="submit" className="w-full btn-secondary py-5 text-xl font-bold mt-8 shadow-2xl tracking-widest border-2 border-indigo-500">Inject Stop</button>
+                            <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-xl mt-6 shadow-lg shadow-orange-600/20 active:scale-95 transition-all">Append to Chain</button>
                         </form>
                     </div>
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {routes.map((route) => (
-                    <div key={route._id} className="glass p-10 rounded-3xl transition-all border border-slate-800 hover:border-indigo-500/50 hover:scale-[1.02] shadow-2xl relative overflow-hidden group">
-                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-600/10 blur-[60px] rounded-full"></div>
-                         <div className="flex justify-between items-start mb-10">
-                              <div className="text-xs uppercase font-extrabold tracking-[0.2em] bg-slate-800 text-indigo-400 px-4 py-1.5 rounded-full">{route.stops?.length || 0} Stops Configured</div>
-                              <button className="text-slate-500 hover:text-red-500 transition-colors p-2 hover:bg-red-500/10 rounded-xl"><Trash2 size={20}/></button>
-                         </div>
-                         <h4 className="text-2xl font-extrabold text-slate-50 tracking-tighter mb-6 group-hover:text-indigo-400 transition-colors">{route.name}</h4>
-                         
-                         {/* Location coordinates summary */}
-                         <div className="space-y-4 mb-8">
-                              <div className="flex items-center gap-4 text-slate-400">
-                                   <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse shrink-0"></div>
-                                   <div className="text-xs font-mono">
-                                       <span className="block text-slate-500 font-bold mb-1">STR: {route.startLocation?.name || 'N/A'}</span>
-                                       {route.startLocation?.latitude}, {route.startLocation?.longitude}
-                                   </div>
-                              </div>
-                               <div className="flex items-center gap-4 text-slate-400">
-                                   <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce shrink-0"></div>
-                                   <div className="text-xs font-mono">
-                                        <span className="block text-slate-500 font-bold mb-1">END: {route.endLocation?.name || 'N/A'}</span>
-                                       {route.endLocation?.latitude}, {route.endLocation?.longitude}
-                                   </div>
-                              </div>
-                         </div>
-
-                         {/* Listed mapped stops order */}
-                         {route.stops && route.stops.length > 0 && (
-                             <div className="mb-6 bg-slate-900 border border-slate-800 rounded-xl p-4 max-h-[150px] overflow-y-auto">
-                                 {route.stops.sort((a,b)=>a.order-b.order).map(stop => (
-                                     <div key={stop._id} className="flex justify-between items-center mb-2 last:mb-0">
-                                         <div className="flex flex-col">
-                                             <span className="text-slate-300 truncate w-40 text-sm font-bold">{stop.name}</span>
-                                             <span className="text-slate-500 text-[10px] tabular-nums tracking-tighter">{stop.latitude}, {stop.longitude}</span>
-                                         </div>
-                                         <span className="bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded text-xs font-bold">Seq: {stop.order}</span>
-                                     </div>
-                                 ))}
-                             </div>
-                         )}
-
-                         <button onClick={() => setIsAddingStop(route._id)} className="w-full py-4 bg-slate-800/20 border border-slate-700 hover:bg-slate-800 rounded-2xl text-xs font-extrabold transition-all duration-300 flex items-center justify-center gap-6 group-hover:shadow-2xl hover:text-white">
-                              Add Waypoint Sequence <Plus size={16} />
-                         </button>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center text-slate-900 font-bold">
+                    <h4 className="font-black text-slate-800 uppercase tracking-tight">Deployment Matrix</h4>
+                    <div className="relative">
+                        <input type="text" placeholder="Route filter..." className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none w-64 focus:border-orange-500 font-bold text-slate-700" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                        <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
                     </div>
-                ))}
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-slate-50/50">
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Route Profile</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Origin</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Final Destination</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Node Count</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {filteredRoutes.length > 0 ? filteredRoutes.map((route) => (
+                                <tr key={route._id} className="hover:bg-slate-50/80 transition-all group">
+                                    <td className="px-6 py-4">
+                                        <p className="font-black text-slate-900 text-sm leading-none mb-1">{route.name}</p>
+                                        <p className="text-[10px] text-orange-600 font-black uppercase tracking-widest italic">{route._id.slice(-6)}</p>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 bg-orange-600 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.4)]"></div>
+                                            <span className="text-sm font-bold text-slate-800">{route.startLocation?.name || 'Undefined'}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.4)]"></div>
+                                            <span className="text-sm font-bold text-slate-800">{route.endLocation?.name || 'Undefined'}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <span className="bg-slate-100 text-slate-600 border border-slate-200 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider group-hover:bg-orange-50 group-hover:text-orange-600 group-hover:border-orange-100 transition-colors">
+                                            {route.stops?.length || 0} Nodes
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex justify-end gap-2 transition-all transform">
+                                            <button onClick={() => setIsAddingStop(route._id)} className="p-2 text-orange-600 hover:bg-orange-50 rounded-xl whitespace-nowrap text-[10px] font-black tracking-widest uppercase flex items-center gap-1.5 border border-orange-100 shadow-sm" title="Append Node"><Plus size={14}/> Node</button>
+                                            <button onClick={() => setEditingRoute(route)} className="p-2.5 text-slate-600 hover:bg-slate-50 rounded-xl border border-slate-100 shadow-sm" title="Configure Topology"><Search size={18}/></button>
+                                            <button onClick={() => handleDeleteRoute(route._id)} className="p-2.5 text-rose-600 hover:bg-rose-50 rounded-xl border border-slate-100 shadow-sm" title="Purge Record"><Trash2 size={18}/></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )) : (
+                                <tr>
+                                    <td colSpan="5" className="px-6 py-20 text-center">
+                                        <Activity className="text-slate-200 mx-auto mb-3" size={44} />
+                                        <p className="text-slate-400 font-bold italic">No active transit nodes detected in memory.</p>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
+            {editingRoute && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in p-6 text-slate-950">
+                    <div className="bg-white w-full max-w-xl p-10 rounded-3xl relative border border-slate-200 shadow-2xl overflow-y-auto max-h-[90vh]">
+                        <button onClick={() => setEditingRoute(null)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors"><X size={24} /></button>
+                        <h4 className="text-2xl font-black mb-6 text-slate-800 tracking-tight">Reconfigure Transit Line</h4>
+                        <form onSubmit={handleEditRoute} className="space-y-4">
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block font-sans">Route Moniker</label>
+                                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-4 font-black outline-none focus:border-orange-500 text-slate-800" value={editingRoute.name} onChange={(e) => setEditingRoute({...editingRoute, name: e.target.value})} required />
+                            </div>
+                            <div className="p-4 border border-slate-200 rounded-2xl bg-slate-50/50">
+                                <h5 className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-3 flex items-center gap-2"><MapPin size={12}/> Origin Terminal</h5>
+                                <input type="text" className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-4 mb-3 text-sm font-bold text-slate-800" value={editingRoute.startLocation?.name} onChange={(e) => setEditingRoute({...editingRoute, startLocation: { ...editingRoute.startLocation, name: e.target.value }})} required />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input type="number" step="any" className="bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-mono" placeholder="Latitude" value={editingRoute.startLocation?.latitude} onChange={(e) => setEditingRoute({...editingRoute, startLocation: { ...editingRoute.startLocation, latitude: Number(e.target.value) }})} required />
+                                    <input type="number" step="any" className="bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-mono" placeholder="Longitude" value={editingRoute.startLocation?.longitude} onChange={(e) => setEditingRoute({...editingRoute, startLocation: { ...editingRoute.startLocation, longitude: Number(e.target.value) }})} required />
+                                </div>
+                            </div>
+                            <div className="p-4 border border-slate-200 rounded-2xl bg-slate-50/50">
+                                <h5 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3 flex items-center gap-2"><MapPin size={12}/> Destination Terminal</h5>
+                                <input type="text" className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-4 mb-3 text-sm font-bold text-slate-800" value={editingRoute.endLocation?.name} onChange={(e) => setEditingRoute({...editingRoute, endLocation: { ...editingRoute.endLocation, name: e.target.value }})} required />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input type="number" step="any" className="bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-mono" placeholder="Latitude" value={editingRoute.endLocation?.latitude} onChange={(e) => setEditingRoute({...editingRoute, endLocation: { ...editingRoute.endLocation, latitude: Number(e.target.value) }})} required />
+                                    <input type="number" step="any" className="bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-mono" placeholder="Longitude" value={editingRoute.endLocation?.longitude} onChange={(e) => setEditingRoute({...editingRoute, endLocation: { ...editingRoute.endLocation, longitude: Number(e.target.value) }})} required />
+                                </div>
+                            </div>
+                            <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-xl mt-6 shadow-lg shadow-orange-600/20 active:scale-95 transition-all text-sm tracking-widest uppercase">Sync Configuration</button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

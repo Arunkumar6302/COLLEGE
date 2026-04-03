@@ -24,6 +24,8 @@ const adminController = require('../controllers/adminController');
 // --- ROUTE & STOP MANAGEMENT ---
 router.get('/route', authAdmin, adminController.getRoutes);
 router.post('/route', authAdmin, adminController.createRoute);
+router.put('/route/:id', authAdmin, adminController.updateRoute);
+router.delete('/route/:id', authAdmin, adminController.deleteRoute);
 router.post('/route/:id/stops', authAdmin, adminController.addStopToRoute);
 router.post('/assign-route', authAdmin, adminController.assignRoute);
 

@@ -32,6 +32,44 @@ exports.addStopToRoute = async (req, res) => {
     } catch (err) { res.status(500).send('Server error'); }
 };
 
+exports.updateRoute = async (req, res) => {
+    const { name, startLocation, endLocation } = req.body;
+    console.log(`[TransitLine] Update Attempt: RouteID ${req.params.id}, OrgID ${req.user.orgId}`);
+    try {
+        const updatedRoute = await Route.findOneAndUpdate(
+            { _id: req.params.id, organizationId: req.user.orgId },
+            { $set: { name, startLocation, endLocation } },
+            { new: true }
+        );
+        res.json(updatedRoute);
+    } catch (err) { 
+        console.error("Route Update Error:", err);
+        res.status(500).json({ msg: err.message || 'Server error during route update' }); 
+    }
+};
+
+exports.deleteRoute = async (req, res) => {
+    console.log(`[TransitLine] Decommission Attempt: RouteID ${req.params.id}, OrgID ${req.user.orgId}`);
+    try {
+        const routeId = req.params.id;
+        const orgId = req.user.orgId;
+        
+        // Decommission routing from buses
+        await Bus.updateMany({ route: routeId, organizationId: orgId }, { $unset: { route: 1 } });
+        
+        // Wipe associated stops
+        await Stop.deleteMany({ routeId: routeId, organizationId: orgId });
+        
+        // Final route erasure
+        await Route.findOneAndDelete({ _id: routeId, organizationId: orgId });
+        
+        res.json({ msg: 'Route and associated stops permanently removed' });
+    } catch (err) { 
+        console.error("Route Deletion Error:", err);
+        res.status(500).json({ msg: err.message || 'Server error during route deletion' }); 
+    }
+};
+
 exports.assignRoute = async (req, res) => {
     const { busId, routeId } = req.body;
     try {
@@ -62,12 +100,13 @@ exports.getUsersByRole = async (req, res) => {
 };
 
 exports.updateUser = async (req, res) => {
-    const { name, email, contactNumber, rollNumber, employeeId } = req.body;
+    const { name, email, contactNumber, rollNumber, employeeId, seatNumber } = req.body;
     try {
         const updateData = { name, email };
         if (contactNumber) updateData.contactNumber = contactNumber;
         if (rollNumber) updateData.rollNumber = rollNumber;
         if (employeeId) updateData.employeeId = employeeId;
+        if (seatNumber) updateData.seatNumber = seatNumber;
         const user = await User.findOneAndUpdate({ _id: req.params.id, organizationId: req.user.orgId }, { $set: updateData }, { new: true });
         res.json(user);
     } catch (err) { res.status(500).send('Server error during user update'); }

@@ -1,46 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  /* INVERT SLATE FOR LIGHT THEME (White Backgrounds, Dark Text) */
-  --color-slate-950: #ffffff;
-  --color-slate-900: #fafaf9;
-  --color-slate-800: #f5f5f4;
-  --color-slate-700: #e7e5e4;
-  --color-slate-600: #a8a29e;
-  --color-slate-500: #78716c;
-  --color-slate-400: #57534e;
-  --color-slate-300: #44403c;
-  --color-slate-200: #292524;
-  --color-slate-100: #1c1917;
-  --color-slate-50: #0c0a09;
-
-  /* TRANSFORM INDIGO TO ORANGE (Primary brand) */
-  --color-indigo-950: #fff7ed;
-  --color-indigo-900: #ffedd5;
-  --color-indigo-800: #fed7aa;
-  --color-indigo-700: #fdba74;
-  --color-indigo-600: #f97316; /* Primary Orange */
-  --color-indigo-500: #ea580c;
-  --color-indigo-400: #c2410c;
-  --color-indigo-300: #9a3412;
-
-  --color-primary: #f97316;
-  --color-primary-dark: #ea580c;
-  --color-secondary: #f59e0b;
-  --color-accent: #fb923c;
-  --color-bg-dark: #ffffff;
-  --color-bg-card: #fafaf9;
+  --color-brand-primary: #f97316; /* Orange 500 */
+  --color-brand-dark: #ea580c;    /* Orange 600 */
+  --color-brand-light: #fff7ed;   /* Orange 50 */
+  --color-brand-border: #fdba74;  /* Orange 200 */
 }
 
 :root {
   --primary: #f97316;
   --primary-dark: #ea580c;
-  --secondary: #f59e0b;
-  --accent: #fb923c;
-  --bg-dark: #ffffff;
-  --bg-card: #fafaf9;
-  --text-main: #1c1917;
-  --text-muted: #57534e;
+  --bg-main: #ffffff;
+  --bg-slate: #f8fafc;
+  --text-main: #0f172a; /* Slate 900 */
+  --text-muted: #64748b; /* Slate 500 */
 }
 
 body {
@@ -50,38 +23,53 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--bg-dark);
+  background-color: var(--bg-main);
   color: var(--text-main);
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(249, 115, 22, 0.15);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(249, 115, 22, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
 .gradient-text {
-  background: linear-gradient(to right, #f97316, #f59e0b);
+  background: linear-gradient(to right, #f97316, #ea580c);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.btn-primary {
-  @apply bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md shadow-indigo-600/30;
+/* Button Utilities for new theme */
+.btn-orange {
+  @apply bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-300 shadow-lg shadow-orange-600/20 active:scale-95;
 }
 
-.btn-secondary {
-  @apply bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md shadow-pink-600/30;
+.btn-white {
+  @apply bg-white hover:bg-slate-50 text-slate-800 font-semibold py-2.5 px-6 rounded-xl border border-slate-200 transition-all duration-300 active:scale-95 shadow-sm;
 }
 
-/* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.8s ease-out forwards;
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
 }
 

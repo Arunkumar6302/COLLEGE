@@ -40,7 +40,7 @@ exports.login = async (req, res) => {
         const payload = { user: { id: user.id, orgId: user.organizationId._id, role: user.role } };
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' }, (err, token) => {
             if (err) throw err;
-            res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, orgName: user.organizationId.name } });
+            res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, orgName: user.organizationId.name, orgId: user.organizationId._id } });
         });
     } catch (err) { res.status(500).send('Server error'); }
 };

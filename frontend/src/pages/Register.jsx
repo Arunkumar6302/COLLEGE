@@ -26,25 +26,27 @@ const Register = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4 py-20">
-            <div className="glass w-full max-w-xl p-12 rounded-3xl animate-fade-in shadow-2xl relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-20">
+            <div className="bg-white w-full max-w-xl p-12 rounded-[40px] animate-fade-in shadow-2xl border border-slate-200 relative overflow-hidden">
                 <div className="text-center mb-10">
-                    <Bus size={44} className="text-primary inline-block mb-4" />
-                    <h2 className="text-4xl font-extrabold gradient-text">Modernize Your Fleet</h2>
-                    <p className="text-slate-400 mt-3 text-lg">Create an organization and start tracking</p>
+                    <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-orange-100 shadow-sm">
+                        <Bus size={32} className="text-orange-600" />
+                    </div>
+                    <h2 className="text-4xl font-black text-slate-900 tracking-tighter leading-none">Domain Registration</h2>
+                    <p className="text-slate-500 text-[11px] font-black uppercase tracking-widest mt-4">Initialize Institutional Fleet Cluster</p>
                 </div>
 
-                {error && <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg mb-6 text-sm">{error}</div>}
+                {error && <div className="bg-rose-50 border border-rose-100 text-rose-600 p-4 rounded-2xl mb-8 text-[11px] font-black uppercase tracking-widest text-center">{error}</div>}
 
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
                     <div className="space-y-2 col-span-2">
-                        <label className="text-sm font-medium text-slate-300 ml-1">Organization Name</label>
-                        <div className="relative">
-                            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 leading-none">Organization Legal Identity</label>
+                        <div className="relative group">
+                            <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-600 transition-colors" size={20} />
                             <input 
                                 name="orgName"
                                 type="text" 
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-5 outline-none focus:border-orange-500 font-black text-slate-800 transition-all placeholder:text-slate-300 shadow-inner"
                                 placeholder="Imperial College of Technology"
                                 value={formData.orgName}
                                 onChange={handleChange}
@@ -53,14 +55,14 @@ const Register = () => {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-300 ml-1">Admin Name</label>
-                        <div className="relative">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 leading-none">Principal Liaison</label>
+                        <div className="relative group">
+                            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-600 transition-colors" size={20} />
                             <input 
                                 name="adminName"
                                 type="text" 
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-                                placeholder="John Doe"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-5 outline-none focus:border-orange-500 font-black text-slate-800 transition-all placeholder:text-slate-300 shadow-inner"
+                                placeholder="Administrator Name"
                                 value={formData.adminName}
                                 onChange={handleChange}
                                 required
@@ -68,14 +70,14 @@ const Register = () => {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-300 ml-1">Official Email</label>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 leading-none">Official Digital Mail</label>
+                        <div className="relative group">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-600 transition-colors" size={20} />
                             <input 
                                 name="email"
                                 type="email" 
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-                                placeholder="admin@college.edu"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-5 outline-none focus:border-orange-500 font-black text-slate-800 transition-all placeholder:text-slate-300 shadow-inner"
+                                placeholder="admin@domain.edu"
                                 value={formData.email}
                                 onChange={handleChange}
                                 required
@@ -83,13 +85,13 @@ const Register = () => {
                         </div>
                     </div>
                     <div className="space-y-2 col-span-2">
-                        <label className="text-sm font-medium text-slate-300 ml-1">Organization Password</label>
-                        <div className="relative">
-                            <Key className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 leading-none">Master Security Token</label>
+                        <div className="relative group">
+                            <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-600 transition-colors" size={20} />
                             <input 
                                 name="password"
                                 type="password" 
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-5 outline-none focus:border-orange-500 font-black text-slate-800 transition-all placeholder:text-slate-300 shadow-inner"
                                 placeholder="••••••••"
                                 value={formData.password}
                                 onChange={handleChange}
@@ -98,13 +100,15 @@ const Register = () => {
                         </div>
                     </div>
                     
-                    <button type="submit" className="w-full btn-primary py-4 text-base mt-6 col-span-2 shadow-lg shadow-indigo-600/20">
-                        Create Organization
+                    <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white py-5 text-lg font-black rounded-2xl mt-6 col-span-2 shadow-xl shadow-orange-600/20 active:scale-95 transition-all uppercase tracking-widest">
+                        Authorize Domain
                     </button>
                     
-                    <p className="text-center text-sm text-slate-500 col-span-2 mt-4 font-medium">
-                        Already registered? <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-semibold underline underline-offset-4">Sign in now</Link>
-                    </p>
+                    <div className="col-span-2 pt-6 border-t border-slate-100 mt-4 text-center">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            Existing Domain? <Link to="/login" className="text-orange-600 font-black hover:underline decoration-2 underline-offset-4">Authenticate Now</Link>
+                        </p>
+                    </div>
                 </form>
             </div>
         </div>

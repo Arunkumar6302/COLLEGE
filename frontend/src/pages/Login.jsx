@@ -29,29 +29,31 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-            <div className="glass w-full max-w-md p-10 rounded-3xl animate-fade-in shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <ShieldCheck size={80} />
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+            <div className="bg-white w-full max-w-md p-12 rounded-[40px] animate-fade-in shadow-2xl border border-slate-200 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-5">
+                    <ShieldCheck size={80} className="text-orange-600" />
                 </div>
                 
                 <div className="flex flex-col items-center mb-10">
-                    <Bus className="text-primary w-12 h-12 mb-4" />
-                    <h2 className="text-3xl font-bold gradient-text">Welcome Back</h2>
-                    <p className="text-slate-400 mt-2">Sign in to continue your journey</p>
+                    <div className="w-20 h-20 bg-orange-50 rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-orange-100">
+                        <Bus className="text-orange-600 w-10 h-10" />
+                    </div>
+                    <h2 className="text-4xl font-black text-slate-900 tracking-tighter leading-none">Access Console</h2>
+                    <p className="text-slate-500 text-[11px] font-black uppercase tracking-widest mt-4">Authorized Personnel Only</p>
                 </div>
 
-                {error && <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg mb-6 text-sm">{error}</div>}
+                {error && <div className="bg-rose-50 border border-rose-100 text-rose-600 p-4 rounded-2xl mb-8 text-[11px] font-black uppercase tracking-widest text-center">{error}</div>}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-bold tracking-tight text-slate-300 ml-1">Email or Username</label>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 leading-none">Security Identifier (Email/UID)</label>
+                        <div className="relative group">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-600 transition-colors" size={20} />
                             <input 
                                 type="text" 
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-4 pl-10 pr-4 outline-none focus:border-indigo-500 font-medium transition-all"
-                                placeholder="name@college.edu or driver_username"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4.5 pl-12 pr-5 outline-none focus:border-orange-500 font-black text-slate-800 transition-all placeholder:text-slate-300 shadow-inner"
+                                placeholder="name@college.edu or driver_id"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -59,12 +61,12 @@ const Login = () => {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-300 ml-1">Password</label>
-                        <div className="relative">
-                            <Key className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 leading-none">Cryptographic Token (Pass)</label>
+                        <div className="relative group">
+                            <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-600 transition-colors" size={20} />
                             <input 
                                 type="password" 
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4.5 pl-12 pr-5 outline-none focus:border-orange-500 font-black text-slate-800 transition-all placeholder:text-slate-300 shadow-inner"
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -73,13 +75,15 @@ const Login = () => {
                         </div>
                     </div>
                     
-                    <button type="submit" className="w-full btn-primary py-4 text-base mt-4 shadow-lg shadow-indigo-600/20">
-                        Sign In
+                    <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white py-5 text-lg font-black rounded-2xl mt-4 shadow-xl shadow-orange-600/20 active:scale-95 transition-all uppercase tracking-widest">
+                        Authorize Access
                     </button>
                     
-                    <p className="text-center text-sm text-slate-500">
-                        New Organization? <Link to="/register" className="text-indigo-400 hover:text-indigo-300 font-semibold underline underline-offset-4">Register here</Link>
-                    </p>
+                    <div className="pt-6 border-t border-slate-100 mt-6 text-center">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            New Organization? <Link to="/register" className="text-orange-600 font-extrabold hover:underline underline-offset-4 decoration-2">Register Domain</Link>
+                        </p>
+                    </div>
                 </form>
             </div>
         </div>

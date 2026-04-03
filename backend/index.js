@@ -57,6 +57,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/driver', require('./routes/driver'));
 app.use('/api/student', require('./routes/student'));
+app.use('/api/chatbot', require('./routes/chatbot'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/bus', require('./routes/bus'));
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
-import { GoogleMap, useJsApiLoader, Marker, Polyline } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, Polyline, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
 import { Bus, MapPin, Navigation, Clock, Bell } from 'lucide-react';
 
 // Distance Calculator using Haversine formula
@@ -24,6 +24,9 @@ const LiveTracking = ({ profile, busLocation, eta, gpsSource }) => {
     const [routeData, setRouteData] = useState(null);
     const [localEta, setLocalEta] = useState(eta || 'Calculating...');
     const [alertTriggered, setAlertTriggered] = useState(false);
+    const [directionsResponse, setDirectionsResponse] = useState(null);
+    const [directionsRequested, setDirectionsRequested] = useState(false);
+    const [lastRequestPos, setLastRequestPos] = useState(null);
 
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
@@ -80,6 +83,79 @@ const LiveTracking = ({ profile, busLocation, eta, gpsSource }) => {
         return path;
     }, [routeData]);
 
+
+
+    const routeConnectionPath = useMemo(() => {
+        if (!busLocation || !busLocation[0] || !busLocation[1] || polylinePath.length === 0) return [];
+        let closestPoint = polylinePath[0];
+        let minDistance = Infinity;
+        polylinePath.forEach(point => {
+            if (!point || typeof point.lat !== 'number' || typeof point.lng !== 'number') return;
+            const dLat = point.lat - busLocation[0];
+            const dLng = point.lng - busLocation[1];
+            const dist = dLat * dLat + dLng * dLng;
+            if (dist < minDistance) {
+                minDistance = dist;
+                closestPoint = point;
+            }
+        });
+        if (!closestPoint) return [];
+        return [{ lat: Number(busLocation[0]), lng: Number(busLocation[1]) }, closestPoint];
+    }, [busLocation, polylinePath]);
+
+
+
+    const directionsCallback = useCallback((response, status) => {
+        if (status === 'OK' && response !== null) {
+            setDirectionsResponse(response);
+            setLastRequestPos(busLocation);
+        } else {
+            console.error('Directions request failed due to ' + status);
+        }
+        setDirectionsRequested(true);
+    }, [busLocation]);
+
+    const directionsOptions = useMemo(() => {
+        if (!routeData?.endLocation || !busLocation || !busLocation[0]) return null;
+        
+        // Dynamic Pruning: Find the next logical stop
+        // We find the stop with the smallest 'order' that the bus hasn't passed yet.
+        // For simplicity, we find the stop closest to the bus and treat it as the 'current' or 'next' target.
+        let closestStopOrder = 0;
+        let minDistance = Infinity;
+        
+        if (routeData.stops && routeData.stops.length > 0) {
+            routeData.stops.forEach(s => {
+                const dist = getDistance(busLocation[0], busLocation[1], s.latitude, s.longitude);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestStopOrder = s.order;
+                }
+            });
+        }
+
+        const waypts = routeData.stops
+            ?.filter(stop => stop.order >= closestStopOrder)
+            .sort((a,b) => a.order - b.order)
+            .map(stop => ({
+                location: { lat: stop.latitude, lng: stop.longitude },
+                stopover: true
+            })) || [];
+
+        // Throttling: Only return new options if bus moved significantly (> 50 meters)
+        if (lastRequestPos) {
+            const moveDist = getDistance(busLocation[0], busLocation[1], lastRequestPos[0], lastRequestPos[1]);
+            if (moveDist < 0.05 && directionsResponse) return null; 
+        }
+
+        return {
+            origin: { lat: busLocation[0], lng: busLocation[1] },
+            destination: { lat: routeData.endLocation.latitude, lng: routeData.endLocation.longitude },
+            waypoints: waypts,
+            travelMode: 'DRIVING'
+        };
+    }, [routeData, busLocation, lastRequestPos, directionsResponse]);
+
     const center = React.useMemo(() => ({
         lat: busLocation[0],
         lng: busLocation[1]
@@ -87,39 +163,60 @@ const LiveTracking = ({ profile, busLocation, eta, gpsSource }) => {
 
     return (
         <div className="flex flex-col h-[calc(100vh-80px)] animate-fade-in relative w-full pl-2">
-            <header className="mb-8 shrink-0 flex justify-between items-end">
-                <div>
-                    <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-rose-400 tracking-tighter">Live Journey Tracking</h2>
-                    <p className="text-slate-400 font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
-                         <Navigation size={14} className="text-indigo-400" /> Powered by Google Maps API Engine
-                    </p>
-                </div>
-                <div className="bg-slate-900 border border-slate-800 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-slate-300">
-                    Source: <span className="text-indigo-400">{gpsSource || 'Pending'}</span>
+            <header className="flex justify-between items-center bg-white p-10 rounded-[40px] border border-slate-200 shadow-sm relative overflow-hidden shrink-0">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-orange-600/5 blur-[100px] pointer-events-none"></div>
+                <div className="flex items-center gap-10">
+                     <div className="w-24 h-24 bg-orange-600 rounded-[32px] flex items-center justify-center shadow-[0_20px_50px_rgba(249,115,22,0.3)] border-2 border-white/20">
+                          <Bus size={48} className="text-white" strokeWidth={1.5} />
+                     </div>
+                     <div>
+                          <h2 className="text-5xl font-black text-slate-900 tracking-tighter mb-2">Live Tracking</h2>
+                          <div className="flex items-center gap-4">
+                               <span className="text-orange-600 font-black uppercase tracking-[0.2em] text-[10px] bg-orange-50 px-3 py-1 rounded-full border border-orange-100">Asset: {assignedBus?.busNumber || 'PENDING'}</span>
+                               <span className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] flex items-center gap-2">
+                                    <MapPin size={14} className="text-orange-600" /> Signal: {gpsSource || 'INITIALIZING'}
+                               </span>
+                          </div>
+                     </div>
                 </div>
             </header>
 
-            <div className="flex-1 glass rounded-[40px] overflow-hidden border border-slate-800 shadow-2xl relative">
+            <div className="flex-1 bg-white rounded-[40px] overflow-hidden border border-slate-200 shadow-sm relative">
                 {assignedBus && isLoaded ? (
                     <GoogleMap
                         mapContainerStyle={mapContainerStyle}
                         center={center}
-                        zoom={15}
-                        options={{ disableDefaultUI: true, styles: [
-                            { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
-                            { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
-                            { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
-                            { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#38414e' }] },
-                            { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#212a37' }] }
-                        ]}}
+                        zoom={14}
+                        options={{ disableDefaultUI: true }}
                     >
-                        <Polyline path={polylinePath} options={{ strokeColor: '#f43f5e', strokeOpacity: 0.8, strokeWeight: 5 }} />
+                        {directionsOptions && (
+                            <DirectionsService
+                                options={directionsOptions}
+                                callback={directionsCallback}
+                            />
+                        )}
+
+                        {directionsResponse && (
+                            <DirectionsRenderer
+                                options={{
+                                    directions: directionsResponse,
+                                    suppressMarkers: true,
+                                    polylineOptions: {
+                                        strokeColor: '#ea580c', // UniTrack Orange
+                                        strokeOpacity: 0.9,
+                                        strokeWeight: 6,
+                                    }
+                                }}
+                            />
+                        )}
+                        
+                        {/* Dynamic Connection rendered via DirectionsRenderer origin */}
                         
                         {routeData?.stops?.map(stop => (
                             <Marker 
                                 key={stop._id} 
                                 position={{ lat: stop.latitude, lng: stop.longitude }} 
-                                label={{ text: `${stop.order}`, color: 'white' }}
+                                label={{ text: `${stop.order}`, color: 'white', fontWeight: 'bold' }}
                             />
                         ))}
 
@@ -132,50 +229,66 @@ const LiveTracking = ({ profile, busLocation, eta, gpsSource }) => {
                         />
                     </GoogleMap>
                 ) : !assignedBus ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-slate-950/80 z-10 flex-col gap-4">
-                         <Bus size={64} className="text-slate-800"/>
-                         <p className="text-slate-500 font-extrabold uppercase tracking-widest text-lg">No Bus Assigned Yet</p>
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-50 z-10 flex-col gap-6">
+                         <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center border border-slate-200">
+                             <Bus size={48} className="text-slate-300"/>
+                         </div>
+                         <p className="text-slate-400 font-black uppercase tracking-[0.2em] text-xs italic">Asset linkage required from directory</p>
                     </div>
                 ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-slate-950/80 z-10 flex-col gap-4">
-                         <p className="text-slate-500 font-extrabold uppercase tracking-widest text-lg animate-pulse">Loading Map Engine...</p>
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-50 z-10 flex-col gap-4">
+                         <p className="text-orange-600 font-black uppercase tracking-widest text-xs animate-pulse">Initializing Geospatial Engine...</p>
                     </div>
                 )}
 
                 {assignedBus && (
                     <>
-                        <div className="absolute top-6 left-6 z-[100] glass px-6 py-4 rounded-3xl border border-white/5 flex items-center gap-4 shadow-2xl backdrop-blur-xl bg-slate-950/60 pointer-events-none">
-                            <div className="w-3 h-3 bg-emerald-500 rounded-full animate-ping"></div>
-                            <div>
-                                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Active Fleet</p>
-                                <span className="text-lg font-black tracking-tight text-slate-100 flex items-center gap-2">Bus <span className="text-orange-400">{assignedBus.busNumber}</span></span>
+                        <div className="absolute top-8 left-8 z-[100] p-6 bg-white/90 border border-slate-200 rounded-3xl shadow-2xl backdrop-blur-xl pointer-events-none">
+                            <div className="flex items-center gap-4 text-orange-600 mb-4">
+                                <Navigation size={24} fill="currentColor" />
+                                <span className="font-extrabold uppercase tracking-widest leading-none">Global Navigation</span>
+                            </div>
+                            <div className="space-y-4 font-mono text-xs font-black">
+                                <div className="flex justify-between gap-10">
+                                    <span className="text-slate-400">LATITUDE</span>
+                                    <span className="text-slate-900 tabular-nums">{busLocation[0]?.toFixed(6) || '---.------'}</span>
+                                </div>
+                                <div className="flex justify-between gap-10">
+                                    <span className="text-slate-400">LONGITUDE</span>
+                                    <span className="text-slate-900 tabular-nums">{busLocation[1]?.toFixed(6) || '---.------'}</span>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="absolute top-6 right-6 z-[100] glass px-6 py-4 rounded-3xl border border-emerald-500/20 flex items-center gap-4 shadow-2xl backdrop-blur-xl bg-slate-950/80 pointer-events-none">
-                            <Clock className="text-emerald-400 animate-pulse" size={24} />
+                        <div className="absolute top-8 right-8 z-[100] bg-white px-6 py-4 rounded-3xl border border-orange-100 flex items-center gap-4 shadow-xl backdrop-blur-xl pointer-events-none">
+                            <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center border border-orange-100">
+                                <Clock className="text-orange-600 animate-pulse" size={24} />
+                            </div>
                             <div>
-                                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Calculated ETA</p>
-                                <span className="text-xl font-black tracking-tight text-emerald-400 tabular-nums">{localEta}</span>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Arrival Window</p>
+                                <span className="text-2xl font-black tracking-tighter text-slate-900 tabular-nums">{localEta}</span>
                             </div>
                         </div>
                     </>
                 )}
 
                 {assignedBus && routeData && (
-                    <div className="absolute bottom-6 left-6 right-6 z-[100] glass p-4 rounded-3xl border border-indigo-500/30 shadow-2xl backdrop-blur-xl bg-slate-950/90 w-full max-w-lg mx-auto">
-                        <label className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-2"><Bell size={14}/> Geo-Fenced Proximity Alert</label>
+                    <div className="absolute bottom-8 left-8 right-8 z-[100] bg-white p-6 rounded-[32px] border border-slate-200 shadow-2xl w-full max-w-lg mx-auto flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 leading-none"><Bell size={14} className="text-orange-600"/> Geo-Spatial Alert Target</label>
+                            <span className="text-[10px] font-black text-orange-600 uppercase tracking-widest leading-none bg-orange-50 px-2 py-1 rounded border border-orange-100">Geofence Active</span>
+                        </div>
                         <select 
-                            className="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 text-sm font-bold shadow-inner"
+                            className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl px-5 py-4 outline-none focus:border-orange-500 text-sm font-black shadow-inner appearance-none cursor-pointer"
                             value={selectedStop}
                             onChange={(e) => setSelectedStop(e.target.value)}
                         >
-                            <option value="">Select a Stop to track precise ETA & trigger alerts...</option>
+                            <option value="">Select waypoint for proximity tracking...</option>
                             {routeData.stops?.sort((a,b)=>a.order-b.order).map(stop => (
-                                 <option key={stop._id} value={stop._id}>{stop.name} (Stop #{stop.order})</option>
+                                 <option key={stop._id} value={stop._id}>{stop.name} (Terminal #{stop.order})</option>
                             ))}
                         </select>
-                        <p className="text-[10px] uppercase font-bold text-slate-500 mt-3 text-center tracking-widest">System will alert when bus is &le; 300m away</p>
+                        <p className="text-[9px] uppercase font-black text-slate-400 text-center tracking-[0.2em] leading-none">System triggers notification within &le; 300m range</p>
                     </div>
                 )}
             </div>

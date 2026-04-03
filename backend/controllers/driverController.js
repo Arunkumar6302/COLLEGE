@@ -7,7 +7,9 @@ exports.getMyBus = async (req, res) => {
             .populate({
                 path: 'route',
                 populate: { path: 'stops' } // Map route strictly with populated stops to drive Driver UI
-            });
+            })
+            .populate('students')
+            .populate('faculty');
         res.json(bus || {});
     } catch (err) { res.status(500).send('Server error'); }
 };

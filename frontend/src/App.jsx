@@ -12,7 +12,7 @@ import { useAuth } from './context/AuthContext';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
     const { token, user, loading } = useAuth();
-    if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">Loading...</div>;
+    if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-orange-600 font-black animate-pulse uppercase tracking-widest text-2xl">Initializing Core Systems...</div>;
     if (!token) return <Navigate to="/login" replace />;
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
         return <Navigate to="/login" replace />;
@@ -24,7 +24,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 function App() {
   return (
     <Router>
-      <div className="bg-slate-950 min-h-screen text-slate-100">
+      <div className="bg-slate-50 min-h-screen text-slate-900 selection:bg-orange-100 selection:text-orange-900">
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />

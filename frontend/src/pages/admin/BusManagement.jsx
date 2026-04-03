@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Bus as BusIcon, Plus, UserPlus, Settings, Trash2, Edit3, X, Save, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bus as BusIcon, Plus, UserPlus, Settings, Trash2, Edit3, X, Save, Users, ChevronDown, ChevronUp, Activity } from 'lucide-react';
+import LiveTracking from '../student/LiveTracking';
 
 const BusManagement = () => {
     const [buses, setBuses] = useState([]);
@@ -13,6 +14,7 @@ const BusManagement = () => {
     const [selectedStudentId, setSelectedStudentId] = useState('');
     const [selectedFacultyId, setSelectedFacultyId] = useState('');
     const [selectedRouteId, setSelectedRouteId] = useState('');
+    const [trackingBus, setTrackingBus] = useState(null);
 
     const [newBus, setNewBus] = useState({ 
         busNumber: '', driverName: '', driverUsername: '', driverPassword: '', driverContact: '' 
@@ -146,228 +148,174 @@ const BusManagement = () => {
     const unassignedFaculty = facultyProfiles.filter(f => !f.assignedBus);
 
     return (
-        <div className="space-y-12">
-            <div className="flex justify-between items-center bg-indigo-600/5 p-8 rounded-3xl border border-indigo-500/10 backdrop-blur-sm">
+        <div className="space-y-6">
+            <div className="flex justify-between items-center bg-white p-8 rounded-2xl border border-slate-200 shadow-sm animate-fade-in">
                 <div>
-                   <h3 className="text-3xl font-extrabold flex items-center gap-4">
-                        <BusIcon className="text-indigo-400" size={36} /> Fleet Management
-                   </h3>
-                   <p className="text-slate-400 mt-2 font-medium">Manage your buses and assign drivers & students.</p>
+                    <h3 className="text-2xl font-black flex items-center gap-3 text-slate-900">
+                        <BusIcon className="text-orange-600" size={28} /> Fleet Operations
+                    </h3>
+                    <p className="text-slate-500 text-xs font-bold mt-1 uppercase tracking-widest">Global Resource & Transport Management</p>
                 </div>
-                <button onClick={() => setIsAdding(true)} className="btn-primary flex items-center gap-3 px-8 py-4 shadow-xl shadow-indigo-600/20">
-                   <Plus size={22} strokeWidth={3} /> Add New Bus
+                <button onClick={() => setIsAdding(true)} className="bg-orange-600 hover:bg-orange-700 text-white font-black py-2.5 px-6 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-orange-600/20 active:scale-95">
+                    <Plus size={18} /> Deploy New Vehicle
                 </button>
             </div>
 
-            {/* ADD MODAL */}
             {isAdding && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in transition-all">
-                    <div className="glass w-full max-w-2xl p-12 rounded-3xl relative border border-slate-700 shadow-2xl scale-110">
-                        <button onClick={() => setIsAdding(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors"><X size={28} /></button>
-                        <h4 className="text-3xl font-bold mb-8 gradient-text">Configure New Bus & Driver</h4>
-                        {errorMsg && (
-                            <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl mb-6 font-bold flex items-center gap-3">
-                                <X size={20} className="shrink-0" /><p>{errorMsg}</p>
-                            </div>
-                        )}
-                        <form onSubmit={handleAddBus} className="space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2 col-span-2">
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Official Bus Number</label>
-                                    <input type="text" className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-5 outline-none focus:border-indigo-500 font-bold tracking-widest text-lg" placeholder="UP-32-BT-2026"
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in p-6">
+                    <div className="bg-white w-full max-w-2xl p-10 rounded-3xl relative border border-slate-200 shadow-2xl overflow-y-auto max-h-[90vh]">
+                        <button onClick={() => setIsAdding(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors"><X size={24} /></button>
+                        <h4 className="text-2xl font-black mb-6 text-slate-800 tracking-tight">Configure Fleet Asset</h4>
+                        {errorMsg && <div className="bg-rose-50 text-rose-600 p-4 rounded-xl mb-6 text-xs font-bold border border-rose-100">{errorMsg}</div>}
+                        <form onSubmit={handleAddBus} className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="col-span-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Registration Label (Bus #)</label>
+                                    <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-4 outline-none focus:border-orange-500 font-black text-slate-800" placeholder="e.g. AP-01-TX-2026"
                                         value={newBus.busNumber} onChange={(e) => setNewBus({...newBus, busNumber: e.target.value})} required />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Driver's Full Name</label>
-                                    <input type="text" className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-5 outline-none focus:border-indigo-500" placeholder="Rahman Khan"
+                                <div className="col-span-2 md:col-span-1">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Operator Name</label>
+                                    <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:border-orange-500 font-bold" placeholder="Full Name"
                                         value={newBus.driverName} onChange={(e) => setNewBus({...newBus, driverName: e.target.value})} required />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Driver Contact #</label>
-                                    <input type="text" className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-5 outline-none focus:border-indigo-500" placeholder="+91 98765-43210"
+                                <div className="col-span-2 md:col-span-1">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Contact #</label>
+                                    <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:border-orange-500 font-bold" placeholder="Phone"
                                         value={newBus.driverContact} onChange={(e) => setNewBus({...newBus, driverContact: e.target.value})} required />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Driver Username</label>
-                                    <input type="text" className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-5 outline-none focus:border-indigo-500" placeholder="rkhan_2026"
+                                <div className="col-span-2 md:col-span-1">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">System Identifier (User)</label>
+                                    <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:border-orange-500" placeholder="username"
                                         value={newBus.driverUsername} onChange={(e) => setNewBus({...newBus, driverUsername: e.target.value})} required />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Driver Password</label>
-                                    <input type="password" className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-5 outline-none focus:border-indigo-500" placeholder="••••••••"
+                                <div className="col-span-2 md:col-span-1">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Security Token (Pass)</label>
+                                    <input type="password" name="driverPassword" autoComplete="new-password"  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:border-orange-500" placeholder="••••••••"
                                         value={newBus.driverPassword} onChange={(e) => setNewBus({...newBus, driverPassword: e.target.value})} required />
                                 </div>
                             </div>
-                            <button type="submit" className="w-full btn-primary py-5 text-xl font-bold mt-8 shadow-2xl flex items-center justify-center gap-3 lowercase transform active:scale-95 transition-all">
-                                <Save size={24} /> confirm configuration
-                            </button>
+                            <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-xl mt-6 transition-all shadow-lg shadow-orange-600/20 active:scale-[0.98]">Authorize Deployment</button>
                         </form>
                     </div>
                 </div>
             )}
 
-            {/* EDIT MODAL */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
+                <div className="flex justify-between items-center p-6 border-b border-slate-100">
+                    <h4 className="font-black text-slate-800 uppercase tracking-tight">Asset Audit</h4>
+                    <div className="relative">
+                        <input type="text" placeholder="Filter vehicles..." className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none w-64 focus:border-orange-500 font-bold text-slate-700" />
+                        <Settings className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                    </div>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-slate-50/50">
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Serial #</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Lead Operator</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Assigned Route</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Load Status</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {buses.length > 0 ? buses.map((bus) => (
+                                <tr key={bus._id} className="hover:bg-slate-50/80 transition-all group">
+                                    <td className="px-6 py-4 font-black text-slate-900 tracking-tight text-base">{bus.busNumber}</td>
+                                    <td className="px-6 py-4 text-slate-700 text-sm font-bold">{bus.driverId?.name || <span className="text-slate-400 italic">No Pilot</span>}</td>
+                                    <td className="px-6 py-4">
+                                        {bus.route?.name ? (
+                                            <span className="inline-flex items-center gap-1.5 text-orange-600 bg-orange-50 px-3 py-1 rounded-full text-[10px] font-black border border-orange-100 uppercase tracking-wider">
+                                                {bus.route.name}
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-400 text-xs italic">Unrouted</span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <div className="flex flex-col items-center gap-1.5">
+                                            <span className="font-black text-slate-800 text-xs">{(bus.students?.length || 0) + (bus.faculty?.length || 0)} / {bus.capacity || 40}</span>
+                                            <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                                                <div 
+                                                    className="h-full bg-orange-500 shadow-sm" 
+                                                    style={{ width: `${Math.min(100, (((bus.students?.length || 0) + (bus.faculty?.length || 0)) / (bus.capacity || 40)) * 100)}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex justify-end gap-2 transition-all transform">
+                                            <button onClick={() => setTrackingBus(bus)} className="p-2.5 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors border border-slate-100 shadow-sm" title="Telemetry"><Settings size={18} /></button>
+                                            <button onClick={() => openEditModal(bus)} className="p-2.5 text-orange-600 hover:bg-orange-50 rounded-xl transition-colors border border-slate-100 shadow-sm" title="Reconfigure"><Edit3 size={18} /></button>
+                                            <button onClick={() => handleDeleteBus(bus._id)} className="p-2.5 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors border border-slate-100 shadow-sm" title="Decommission"><Trash2 size={18} /></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )) : (
+                                <tr>
+                                    <td colSpan="5" className="px-6 py-20 text-center">
+                                        <Activity className="text-slate-200 mx-auto mb-3" size={48} />
+                                        <p className="text-slate-400 font-bold italic">No active assets registered in the database.</p>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {trackingBus && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-6">
+                    <div className="bg-white w-full h-full max-w-6xl rounded-3xl relative border border-slate-200 shadow-2xl overflow-hidden flex flex-col">
+                        <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-white">
+                            <h4 className="font-black text-slate-800 flex items-center gap-3">
+                                <Activity className="text-orange-600" size={24} /> Live Telemetry: {trackingBus.busNumber}
+                            </h4>
+                            <button onClick={() => setTrackingBus(null)} className="p-2 bg-slate-50 text-slate-400 hover:text-rose-500 rounded-xl transition-all border border-slate-200"><X size={24} /></button>
+                        </div>
+                        <div className="flex-1">
+                            <LiveTracking 
+                                profile={{ assignedBus: trackingBus }}
+                                busLocation={[trackingBus.lastLocation?.latitude || 12.9716, trackingBus.lastLocation?.longitude || 77.5946]}
+                                gpsSource="Internal Ops"
+                                eta="Real-time Stream Active"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {editingBus && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in transition-all">
-                    <div className="glass w-full max-w-xl p-12 rounded-3xl relative border border-slate-700 shadow-2xl scale-110">
-                        <button onClick={() => setEditingBus(null)} className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors"><X size={28} /></button>
-                        <h4 className="text-3xl font-bold mb-8 gradient-text">Edit Bus & Driver</h4>
-                        <form onSubmit={handleEditBusSubmit} className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Bus Number</label>
-                                <input type="text" className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-5 outline-none focus:border-indigo-500 font-bold tracking-widest text-lg"
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white w-full max-w-xl p-10 rounded-3xl relative border border-slate-200 shadow-2xl">
+                        <button onClick={() => setEditingBus(null)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors"><X size={24} /></button>
+                        <h4 className="text-2xl font-black mb-6 text-slate-800 leading-tight">Reconfigure Operation</h4>
+                        <form onSubmit={handleEditBusSubmit} className="space-y-4">
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Asset Label</label>
+                                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:border-orange-500 font-black text-slate-900"
                                     value={editingBus.busNumber} onChange={(e) => setEditingBus({...editingBus, busNumber: e.target.value})} required />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Driver Name</label>
-                                <input type="text" className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-5 outline-none focus:border-indigo-500"
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Primary Operator</label>
+                                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:border-orange-500 font-bold text-slate-700"
                                     value={editingBus.driverId?.name || ''} onChange={(e) => setEditingBus({...editingBus, driverId: {...editingBus.driverId, name: e.target.value}})} required />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Driver Contact #</label>
-                                <input type="text" className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-5 outline-none focus:border-indigo-500"
-                                    value={editingBus.driverId?.contactNumber || ''} onChange={(e) => setEditingBus({...editingBus, driverId: {...editingBus.driverId, contactNumber: e.target.value}})} required />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Assigned Route Line</label>
-                                <select className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-5 outline-none focus:border-indigo-500 font-bold"
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Route Matrix Assignment</label>
+                                <select className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:border-orange-500 font-black text-slate-800"
                                     value={editingBus.route || ''} onChange={(e) => setEditingBus({...editingBus, route: e.target.value})}>
-                                    <option value="">No Route Assigned</option>
+                                    <option value="">Detached / No Route</option>
                                     {routes.map(r => (<option key={r._id} value={r._id}>{r.name}</option>))}
                                 </select>
                             </div>
-                            <button type="submit" className="w-full btn-primary py-5 text-xl font-bold mt-8 shadow-2xl flex items-center justify-center gap-3">
-                                <Save size={24} /> Save Changes
-                            </button>
+                            <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-xl mt-6 shadow-lg shadow-orange-600/20 active:scale-95 transition-all">Submit Asset Changes</button>
                         </form>
                     </div>
                 </div>
             )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-                {buses.length > 0 ? buses.map((bus) => {
-                    const isExpanded = expandedBusId === bus._id;
-                    return (
-                        <div key={bus._id} className="glass p-10 rounded-3xl transition-all group relative border-2 border-transparent hover:border-indigo-500/30 hover:scale-[1.01] shadow-2xl overflow-hidden cursor-default flex flex-col justify-between">
-                            <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-600/10 blur-[60px] rounded-full group-hover:bg-indigo-600/20 transition-colors pointer-events-none"></div>
-                            
-                            <div>
-                                <div className="flex justify-between items-start mb-10 relative z-10">
-                                    <div className="text-xs uppercase font-extrabold tracking-[0.2em] bg-slate-800 text-indigo-400 px-4 py-1.5 rounded-full border border-slate-700 shadow-inner">Active</div>
-                                    <div className="flex gap-4">
-                                        <button onClick={() => openEditModal(bus)} className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-slate-800 rounded-xl"><Edit3 size={20}/></button>
-                                        <button onClick={() => handleDeleteBus(bus._id)} className="text-slate-500 hover:text-red-500 transition-colors p-2 hover:bg-red-500/10 rounded-xl"><Trash2 size={20}/></button>
-                                    </div>
-                                </div>
-                                <h4 className="text-3xl font-extrabold text-slate-50 tracking-tighter mb-4 group-hover:text-indigo-400 transition-colors">{bus.busNumber}</h4>
-                                <div className="space-y-4 mb-8">
-                                    <div className="flex items-center justify-between text-slate-400 bg-slate-900 border border-slate-800 p-3 rounded-xl">
-                                        <div className="flex items-center gap-3">
-                                            <UserPlus size={18} className="text-indigo-500" />
-                                            <span className="text-sm font-semibold truncate">Driver: {bus.driverId?.name || 'Not Assigned'}</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between text-slate-400 bg-slate-900 border border-slate-800 p-3 rounded-xl">
-                                        <div className="flex items-center gap-3">
-                                            <BusIcon size={18} className="text-emerald-500" />
-                                            <span className="text-sm font-semibold truncate">Route: <span className="text-slate-100">{bus.route?.name || 'Unassigned'}</span></span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between text-slate-400 bg-slate-900 border border-slate-800 p-3 rounded-xl">
-                                        <div className="flex items-center gap-3">
-                                            <Users size={18} className="text-pink-500" />
-                                            <span className="text-sm font-semibold">Capacity: <span className="text-slate-100 font-bold">{ (bus.students?.length || 0) + (bus.faculty?.length || 0)}</span> / {bus.capacity || 40}</span>
-                                        </div>
-                                        <button onClick={() => setExpandedBusId(isExpanded ? null : bus._id)} className="text-indigo-400 hover:text-white flex items-center gap-1 font-bold text-xs bg-slate-800 px-2 py-1 rounded-md transition-colors">
-                                            {isExpanded ? <><ChevronUp size={14}/> Hide</> : <><ChevronDown size={14}/> View</>}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* EXPANDED MEMBER LIST VIEW (STUDENTS & FACULTY) */}
-                            {isExpanded && (
-                                <div className="mt-2 mb-8 bg-slate-900 rounded-2xl p-6 border border-slate-800 animate-fade-in relative z-10 shadow-inner overflow-hidden">
-                                    
-                                    {/* FACULTY SECTION */}
-                                    <h5 className="text-[11px] font-black text-rose-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Users size={12}/> Faculty Members ({bus.faculty?.length || 0})</h5>
-                                    <div className="space-y-2 mb-6 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
-                                        {bus.faculty?.length > 0 ? bus.faculty.map(fac => (
-                                            <div key={fac._id} className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800 transition-colors hover:border-red-500/30 group/student">
-                                                <div className="flex flex-col">
-                                                    <span className="text-slate-200 font-bold text-sm w-44 truncate">{fac.name}</span>
-                                                    <span className="text-slate-500 text-[10px] font-mono tracking-wider">{fac.employeeId || 'No Emp ID'}</span>
-                                                </div>
-                                                <button onClick={() => handleRemoveFaculty(fac._id, bus._id)} className="text-slate-600 hover:text-red-500 bg-slate-900 hover:bg-red-500/10 p-2 rounded-lg transition-all opacity-0 group-hover/student:opacity-100">
-                                                    <X size={14}/>
-                                                </button>
-                                            </div>
-                                        )) : (
-                                            <p className="text-slate-600 text-[11px] font-bold uppercase tracking-widest italic py-2 pl-2">No Faculty Assigned.</p>
-                                        )}
-                                    </div>
-
-                                    {/* STUDENT SECTION */}
-                                    <h5 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Users size={12}/> Students ({bus.students?.length || 0})</h5>
-                                    <div className="space-y-2 mb-6 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
-                                        {bus.students?.length > 0 ? bus.students.map(student => (
-                                            <div key={student._id} className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800 transition-colors hover:border-red-500/30 group/student">
-                                                <div className="flex flex-col">
-                                                    <span className="text-slate-200 font-bold text-sm w-44 truncate">{student.name}</span>
-                                                    <span className="text-slate-500 text-[10px] font-mono tracking-wider">{student.rollNumber || student.email}</span>
-                                                </div>
-                                                <button onClick={() => handleRemoveStudent(student._id, bus._id)} className="text-slate-600 hover:text-red-500 bg-slate-900 hover:bg-red-500/10 p-2 rounded-lg transition-all opacity-0 group-hover/student:opacity-100">
-                                                    <X size={14}/>
-                                                </button>
-                                            </div>
-                                        )) : (
-                                            <p className="text-slate-600 text-[11px] font-bold uppercase tracking-widest italic py-2 pl-2">No Students Assigned.</p>
-                                        )}
-                                    </div>
-
-                                    {/* ASSIGNMENT FORMS */}
-                                    <div className="space-y-3 pt-4 border-t border-slate-800/80">
-                                        <form onSubmit={(e) => { e.preventDefault(); handleAssignRoute(bus._id); }} className="flex gap-2 mb-4">
-                                            <select value={selectedRouteId} onChange={(e) => setSelectedRouteId(e.target.value)} 
-                                                className="flex-1 bg-emerald-950/30 border border-emerald-500/30 text-xs text-emerald-400 rounded-lg px-3 py-2.5 outline-none focus:border-emerald-500 appearance-none font-bold">
-                                                <option value="">+ Assign Bus Route...</option>
-                                                {routes.map(r => (<option key={r._id} value={r._id}>{r.name}</option>))}
-                                            </select>
-                                            <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 rounded-lg font-bold shadow-lg text-xs shrink-0 transition-transform active:scale-95">Link Route</button>
-                                        </form>
-
-                                        <form onSubmit={(e) => { e.preventDefault(); handleAssignFaculty(bus._id); }} className="flex gap-2">
-                                            <select value={selectedFacultyId} onChange={(e) => setSelectedFacultyId(e.target.value)} 
-                                                className="flex-1 bg-slate-950 border border-slate-700 text-xs text-slate-200 rounded-lg px-3 py-2.5 outline-none focus:border-rose-500 appearance-none font-bold">
-                                                <option value="">+ Assign Faculty...</option>
-                                                {unassignedFaculty.map(f => (<option key={f._id} value={f._id}>{f.name} ({f.employeeId})</option>))}
-                                            </select>
-                                            <button type="submit" className="bg-rose-600 hover:bg-rose-500 text-white px-4 rounded-lg font-bold shadow-lg text-xs shrink-0 transition-transform active:scale-95">Assign</button>
-                                        </form>
-
-                                        <form onSubmit={(e) => { e.preventDefault(); handleAssignStudent(bus._id); }} className="flex gap-2">
-                                            <select value={selectedStudentId} onChange={(e) => setSelectedStudentId(e.target.value)} 
-                                                className="flex-1 bg-slate-950 border border-slate-700 text-xs text-slate-200 rounded-lg px-3 py-2.5 outline-none focus:border-indigo-500 appearance-none font-bold">
-                                                <option value="">+ Assign Student...</option>
-                                                {unassignedStudents.map(s => (<option key={s._id} value={s._id}>{s.name} ({s.rollNumber})</option>))}
-                                            </select>
-                                            <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 rounded-lg font-bold shadow-lg text-xs shrink-0 transition-transform active:scale-95">Assign</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            )}
-
-                            <button className="w-full py-4 mt-auto bg-slate-800/10 border border-slate-700 hover:bg-indigo-600 hover:border-transparent rounded-2xl text-sm font-extrabold transition-all duration-300 group-hover:shadow-2xl">
-                                Track Real-time
-                            </button>
-                        </div>
-                    );
-                }) : (
-                    <div className="col-span-3 text-center py-20 bg-slate-900/30 rounded-3xl border-2 border-dashed border-slate-800 animate-pulse flex items-center justify-center">
-                         <p className="text-2xl text-slate-500 font-bold italic tracking-wide flex items-center gap-4"><BusIcon className="opacity-50"/> No Buses Registered Yet</p>
-                    </div>
-                )}
-            </div>
         </div>
     );
 };
