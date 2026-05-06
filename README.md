@@ -12,14 +12,13 @@ UniTrack is a state-of-the-art, premium SaaS-based transit management platform f
 
 ## 🧱 Technology Stack
 - **Frontend**: React.js, Tailwind CSS, Framer Motion, Leaflet.
-- **Backend**: Node.js, Express.js, MongoDB (Mongoose), Socket.io.
+- **Backend**: Node.js, Express.js, SQL, Socket.io.
 - **AI & Integrations**: Groq Cloud API, Firebase Admin SDK, ThingSpeak.
 
 ## 🛠️ Getting Started
 
 ### Prerequisites
 - Node.js (v18+)
-- MongoDB Atlas / Local Instance
 - Firebase Project (for notifications)
 - Groq Cloud API Key
 
